@@ -1,26 +1,31 @@
 package com.example.drivers_ms;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
-import java.util.Properties;
 
+@EnableKafka
 @Repository
 public class DriversRepository {
 
+    private final KafkaTemplate<String, String> kafkaTemplate;
     private String serverId = "";
+
     public void setServerId(String serverId) {
         this.serverId = serverId;
     }
+
     final JdbcTemplate jdbcTemplate;
 
-    public DriversRepository(JdbcTemplate jdbcTemplate) {
+    public DriversRepository(JdbcTemplate jdbcTemplate, KafkaTemplate<String, String> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
         this.jdbcTemplate = jdbcTemplate;
+        serverId = "kafka:9092";
     }
 
     public void register(Driver driver){
@@ -56,19 +61,7 @@ public class DriversRepository {
 
 
     public void postGeolocation(String location, int id){
-        String channelName = "geolocation-driver-" + Integer.toString(id);
-
-        Properties properties = new Properties();
-        properties.put("bootstrap.servers", serverId);
-        properties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-
-        ProducerRecord producerRecord = new ProducerRecord(channelName, "location", location);
-
-        KafkaProducer kafkaProducer = new KafkaProducer(properties);
-        kafkaProducer.send(producerRecord);
-        kafkaProducer.close();
-
+        kafkaTemplate.send("test", location);
     }
 
 
@@ -88,11 +81,6 @@ public class DriversRepository {
     public void takeDriver(int id) {
         String sql = "UPDATE drivers SET is_driver_taken = ? WHERE id = ?";
         Object[] params = {true, id};
-        try {
-            Driver user =  jdbcTemplate.queryForObject(sql, params,
-                    BeanPropertyRowMapper.newInstance(Driver.class));
-        } catch (EmptyResultDataAccessException e) {
-            e.printStackTrace();
-        }
+        jdbcTemplate.update(sql, params);
     }
 }
