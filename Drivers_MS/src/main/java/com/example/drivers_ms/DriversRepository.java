@@ -1,5 +1,7 @@
 package com.example.drivers_ms;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -7,13 +9,14 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.util.HashMap;
 import java.util.Optional;
 
 @EnableKafka
 @Repository
 public class DriversRepository {
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private KafkaTemplate<String, String> kafkaTemplate;
     private String serverId = "";
 
     public void setServerId(String serverId) {
@@ -61,7 +64,19 @@ public class DriversRepository {
 
 
     public void postGeolocation(String location, int id){
-        kafkaTemplate.send("test", location);
+        HashMap<String, String> message = new HashMap<>();
+        message.put("username", Integer.toString(id));
+        message.put("geolocation", location);
+        ObjectMapper mapper = new ObjectMapper();
+        String jsonString = "";
+        try {
+            jsonString = mapper
+                    .writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(message);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        kafkaTemplate.send("test", jsonString);
     }
 
 
