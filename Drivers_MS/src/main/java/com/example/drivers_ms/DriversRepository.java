@@ -76,7 +76,7 @@ public class DriversRepository {
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
-        kafkaTemplate.send("test", jsonString);
+        kafkaTemplate.send("driver_geolocation", jsonString);
     }
 
 

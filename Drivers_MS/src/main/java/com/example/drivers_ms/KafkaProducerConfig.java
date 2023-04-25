@@ -39,7 +39,7 @@ public class KafkaProducerConfig {
 
     @Bean
     NewTopic testTopic() {
-        return TopicBuilder.name("test").build();
+        return TopicBuilder.name("driver_passenger").build();
     }
 }
 
